@@ -26,10 +26,16 @@ You can find all the documentation for LunarVim at [lunarvim.org](https://www.lu
 
 ## Install In One Command!
 
-Make sure you have the release version of Neovim (0.5).
+Make sure you have the release version of Neovim (0.6.1+).
 
+Linux:
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh)
+```
+
+Windows (Powershell):
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.ps1 -UseBasicParsing | Invoke-Expression
 ```
 
 ## Install Language support
@@ -70,6 +76,7 @@ lvim.keys.normal_mode["<C-s>"] = ":w<cr>"
 
 -- Configure builtin plugins
 lvim.builtin.dashboard.active = true
+lvim.builtin.notify.active = true
 lvim.builtin.terminal.active = true
 
 -- Treesitter parsers change this to a table of the languages you want i.e. {"java", "python", javascript}
@@ -86,9 +93,9 @@ vim.list_extend(lvim.lsp.override, { "pyright" })
 -- set a formatter, this will override the language server formatting capabilities (if it exists)
 local formatters = require "lvim.lsp.null-ls.formatters"
 formatters.setup {
-  { exe = "black" },
+  { command = "black" },
   {
-    exe = "prettier",
+    command = "prettier",
     ---@usage specify which filetypes to enable. By default a providers will attach to all the filetypes it supports.
     filetypes = { "typescript", "typescriptreact" },
   },
@@ -97,9 +104,9 @@ formatters.setup {
 -- set additional linters
 local linters = require "lvim.lsp.null-ls.linters"
 linters.setup {
-  { exe = "black" },
+  { command = "black" },
   {
-    exe = "eslint_d",
+    command = "eslint_d",
     ---@usage specify which filetypes to enable. By default a providers will attach to all the filetypes it supports.
     filetypes = { "javascript", "javascriptreact" },
   },
@@ -129,6 +136,7 @@ lvim.plugins = {
 ## Breaking changes
 
 - `lvim.lang.FOO` is no longer supported. Refer to <https://www.lunarvim.org/languages> for up-to-date instructions.
+- `lvim.lsp.popup_border` has been deprecated in favor of `lvim.lsp.float.border` and `lvim.lsp.diagnostics.float.border`.
 
 ## Resources
 

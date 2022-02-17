@@ -58,6 +58,7 @@ M.config = function(config)
 
     footer = { "lunarvim.org" },
   }
+  lvim.builtin.which_key.mappings[";"] = { "<cmd>Dashboard<CR>", "Dashboard" }
 end
 
 M.setup = function()
@@ -69,12 +70,10 @@ M.setup = function()
 
   vim.g.dashboard_custom_section = lvim.builtin.dashboard.custom_section
 
-  lvim.builtin.which_key.mappings[";"] = { "<cmd>Dashboard<CR>", "Dashboard" }
-
   vim.g.dashboard_session_directory = lvim.builtin.dashboard.session_directory
 
   local lvim_site = "lunarvim.org"
-  local lvim_version = require("lvim.bootstrap"):get_version "short"
+  local lvim_version = require("lvim.utils.git"):get_lvim_version "short"
   local num_plugins_loaded = #vim.fn.globpath(get_runtime_dir() .. "/site/pack/packer/start", "*", 0, 1)
 
   local footer = {
@@ -85,7 +84,7 @@ M.setup = function()
 
   if lvim_version then
     table.insert(footer, 2, "")
-    table.insert(footer, 3, "v" .. lvim_version)
+    table.insert(footer, 2, lvim_version)
   end
 
   local text = require "lvim.interface.text"

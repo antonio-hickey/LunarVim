@@ -1,5 +1,4 @@
-local utils = {}
-local Log = require "lvim.core.log"
+local M = {}
 local uv = vim.loop
 
 -- recursive Print (structure, limit, separator)
@@ -44,7 +43,7 @@ local function r_inspect_settings(structure, limit, separator)
   return limit - 1
 end
 
-function utils.generate_settings()
+function M.generate_settings()
   -- Opens a file in append mode
   local file = io.open("lv-settings.lua", "w")
 
@@ -58,52 +57,11 @@ function utils.generate_settings()
   io.close(file)
 end
 
--- autoformat
-function utils.toggle_autoformat()
-  if lvim.format_on_save then
-    require("lvim.core.autocmds").define_augroups {
-      autoformat = {
-        {
-          "BufWritePre",
-          "*",
-          ":silent lua vim.lsp.buf.formatting_sync()",
-        },
-      },
-    }
-    Log:debug "Format on save active"
-  end
-
-  if not lvim.format_on_save then
-    vim.cmd [[
-      if exists('#autoformat#BufWritePre')
-        :autocmd! autoformat
-      endif
-    ]]
-    Log:debug "Format on save off"
-  end
-end
-
-function utils.unrequire(m)
-  package.loaded[m] = nil
-  _G[m] = nil
-end
-
-function utils.gsub_args(args)
-  if args == nil or type(args) ~= "table" then
-    return args
-  end
-  local buffer_filepath = vim.fn.fnameescape(vim.api.nvim_buf_get_name(0))
-  for i = 1, #args do
-    args[i] = string.gsub(args[i], "${FILEPATH}", buffer_filepath)
-  end
-  return args
-end
-
 --- Returns a table with the default values that are missing.
 --- either paramter can be empty.
 --@param config (table) table containing entries that take priority over defaults
 --@param default_config (table) table contatining default values if found
-function utils.apply_defaults(config, default_config)
+function M.apply_defaults(config, default_config)
   config = config or {}
   default_config = default_config or {}
   local new_config = vim.tbl_deep_extend("keep", vim.empty_dict(), config)
@@ -114,7 +72,7 @@ end
 --- Checks whether a given path exists and is a file.
 --@param path (string) path to check
 --@returns (bool)
-function utils.is_file(path)
+function M.is_file(path)
   local stat = uv.fs_stat(path)
   return stat and stat.type == "file" or false
 end
@@ -122,17 +80,22 @@ end
 --- Checks whether a given path exists and is a directory
 --@param path (string) path to check
 --@returns (bool)
-function utils.is_directory(path)
+function M.is_directory(path)
   local stat = uv.fs_stat(path)
   return stat and stat.type == "directory" or false
 end
 
-utils.join_paths = _G.join_paths
+M.join_paths = _G.join_paths
 
-function utils.write_file(path, txt, flag)
+---Write data to a file
+---@param path string can be full or relative to `cwd`
+---@param txt string|table text to be written, uses `vim.inspect` internally for tables
+---@param flag string used to determine access mode, common flags: "w" for `overwrite` or "a" for `append`
+function M.write_file(path, txt, flag)
+  local data = type(txt) == "string" and txt or vim.inspect(txt)
   uv.fs_open(path, flag, 438, function(open_err, fd)
     assert(not open_err, open_err)
-    uv.fs_write(fd, txt, -1, function(write_err)
+    uv.fs_write(fd, data, -1, function(write_err)
       assert(not write_err, write_err)
       uv.fs_close(fd, function(close_err)
         assert(not close_err, close_err)
@@ -141,65 +104,4 @@ function utils.write_file(path, txt, flag)
   end)
 end
 
-function utils.debounce(ms, fn)
-  local timer = vim.loop.new_timer()
-  return function(...)
-    local argv = { ... }
-    timer:start(ms, 0, function()
-      timer:stop()
-      vim.schedule_wrap(fn)(unpack(argv))
-    end)
-  end
-end
-
-function utils.search_file(file, args)
-  local Job = require "plenary.job"
-  local stderr = {}
-  local stdout, ret = Job
-    :new({
-      command = "grep",
-      args = { args, file },
-      cwd = get_cache_dir(),
-      on_stderr = function(_, data)
-        table.insert(stderr, data)
-      end,
-    })
-    :sync()
-  return stdout, ret, stderr
-end
-
-function utils.file_contains(file, query)
-  local stdout, ret, stderr = utils.search_file(file, query)
-  if ret == 0 then
-    return true
-  end
-  if not vim.tbl_isempty(stderr) then
-    error(vim.inspect(stderr))
-  end
-  if not vim.tbl_isempty(stdout) then
-    error(vim.inspect(stdout))
-  end
-  return false
-end
-
-function utils.log_contains(query)
-  local logfile = require("lvim.core.log"):get_path()
-  local stdout, ret, stderr = utils.search_file(logfile, query)
-  if ret == 0 then
-    return true
-  end
-  if not vim.tbl_isempty(stderr) then
-    error(vim.inspect(stderr))
-  end
-  if not vim.tbl_isempty(stdout) then
-    error(vim.inspect(stdout))
-  end
-  if not vim.tbl_isempty(stderr) then
-    error(vim.inspect(stderr))
-  end
-  return false
-end
-
-return utils
-
--- TODO: find a new home for these autocommands
+return M
